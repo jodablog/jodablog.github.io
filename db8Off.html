@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Leaflet.Elevation</title>
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+	 <style>
+	   html, body, #map {
+	      height:100%;
+	      width:100%;
+	      padding:0px;
+	      margin:0px;
+	   }
+	</style>
+	<!-- Elevation d3 -->
+	<script src="resources/d3.v3.min.js" charset="utf-8"></script>
+	<!-- Leaflet css -->
+	<!-- <link rel="stylesheet" href="../leaflet/leaflet.css" /> -->
+
+	<!-- Fontawesome -->
+<!--	<link href="http://netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.css" rel="stylesheet"> -->
+	<link href="resources/fa/5.10.2/css/all.css" rel="stylesheet">
+    <link rel="stylesheet" href="resources/awesome-markers/leaflet.awesome-markers.css">
+    <link rel="stylesheet" href="resources/leaflet/leaflet.css" />
+    
+	<!-- Alternative Fontawesome
+	<script src="https://kit.fontawesome.com/906ca78bc1.js"></script>
+	<link rel="stylesheet" href="http://code.ionicframework.com/ionicons/1.5.2/css/ionicons.min.css">
+	<link rel="stylesheet" href="../dist/leaflet.awesome-markers.css">
+	<script src="../dist/leaflet.awesome-markers.js"></script> -->
+
+	<!-- Elevation css -->
+	<!-- <link rel="stylesheet" href="../dist/leaflet.elevation-0.0.4.css" /> -->
+	<link rel="stylesheet" href="resources/elevation-themes/css/themes/black.css" />
+	<script type="text/javascript" src="resources/leaflet/leaflet.js"></script>
+	<script type="text/javascript" src="resources/leaflet-elevation/leaflet.elevation-0.0.4.min.js"></script>
+	
+	<!-- Leaflet GPX -->
+	<script type="text/javascript" src="resources/leaflet-gpx/gpx.js"></script>
+</head>
+<body>
+
+	<div id="map"></div>
+	<script src="resources/awesome-markers/leaflet.awesome-markers.js"></script>
+
+	<script type="text/javascript">
+	
+	
+		var map = new L.Map('map');
+
+		var url = 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+			attr ='<a href="https://www.opentopomap.org/">OpenTopoMap</a>',
+			service = new L.TileLayer(url, {subdomains:"abc",attribution:attr});
+			
+		var pageWidth = document.documentElement.clientWidth,
+    		pageHeight = document.documentElement.clientHeight;
+    /*
+  // Creates a red marker with the coffee icon
+  var redMarker = L.AwesomeMarkers.icon({
+    icon: 'coffee',
+    markerColor: 'red'
+  });
+      
+  L.marker([51.941196,4.512291], {icon: redMarker}).addTo(map);*/
+
+		var el = L.control.elevation({
+  	position: "bottomleft",
+	theme: "black-theme", //default: lime-theme
+	width: 0.9 * pageWidth,
+	height: 0.35 * pageHeight,
+	margins: {
+		top: 10,
+		right: 25,
+		bottom: 30,
+		left: 60
+	},
+	useHeightIndicator: true, //if false a marker is drawn at map position
+	interpolation: "linear", //see https://github.com/mbostock/d3/wiki/SVG-Shapes#wiki-area_interpolate
+	hoverNumber: {
+		decimalsX: 1, //decimals on distance (always in km)
+		decimalsY: 0, //deciamls on hehttps://www.npmjs.com/package/leaflet.coordinatesight (always in m)
+		formatter: undefined //custom formatter function may be injected
+	},
+	xTicks: undefined, //number of ticks in x axis, calculated by default according to width
+	yTicks: undefined, //number of ticks on y axis, calculated by default according to height
+	collapsed: true,  //collapsed mode, show chart on click or mouseover
+	imperial: false    //display imperial units instead of metric
+});
+		el.addTo(map);
+		var g=new L.GPX("resources/gpx/20190826JODATracksSort.gpx",
+		
+		 {
+		 	/*polyline_options: {
+    color: 'darkred', //423730 a23336
+    opacity: 0.75,
+    weight: 3,
+    lineCap: 'round'
+  },*/
+			async: true,
+  			/*marker_options: {
+			    startIconUrl: '../lib/leaflet-gpx/campsite-15.svg',
+			    endIconUrl: ''/*L.AwesomeMarkers.icon({
+        icon: 'coffee',
+        prefix: 'fa',
+        markerColor: 'blue',
+        iconColor: 'white'
+      })
+			   ,
+			    shadowUrl: './lib/leaflet-gpx/pin-shadow.png'
+
+			  }*/
+			  
+			  
+			   marker_options: {
+			   	
+			   	startIconUrl: 'blank.png',
+			   	endIconUrl: 'blank.png',
+			   	shadowUrl: 'blank.png',
+			   	/*startIcon: L.AwesomeMarkers.icon({icon: 'flag', prefix: 'fa', markerColor: 'darkblue'}),
+			   	endIcon: L.AwesomeMarkers.icon({icon: 'flag-checkered', prefix: 'fa', markerColor: 'darkred'}),*/
+			   	wptIcons: {
+      'Camping': new L.AwesomeMarkers.icon({
+        icon: 'campground',
+        prefix: 'fa',
+        markerColor: 'black',
+        iconColor: 'white'
+      }),
+      
+            'Building': new L.AwesomeMarkers.icon({
+        icon: 'home',
+        prefix: 'fa',
+        markerColor: 'black',
+        iconColor: 'white'
+      }),
+      
+        'Bike Trail': new L.AwesomeMarkers.icon({
+        icon: 'bicycle',
+        prefix: 'fa',
+        markerColor: 'black',
+        iconColor: 'white'
+      }),
+      
+       'Airport': new L.AwesomeMarkers.icon({
+        icon: 'plane',
+        prefix: 'fa',
+        markerColor: 'black',
+        iconColor: 'white'
+      })
+      
+    }
+			   	}
+    /*pointMatchers: [
+      {
+        regex: /k/,
+        icon: L.AwesomeMarkers.icon({icon: 'medkit', prefix: 'fa', markerColor: 'red'})
+        
+      },
+      {
+        regex: /Home/,
+        icon: new L.AwesomeMarkers.icon({
+          icon: 'home',
+          markerColor: 'green',
+          iconColor: 'white'
+        }),
+      }
+    ]
+  }/*
+  
+  
+		  marker_options: {
+    wptIcons: {
+      'Coffee shop': new L.AwesomeMarkers.icon({
+        icon: 'coffee',
+        prefix: 'fa',
+        markerColor: 'blue',
+        iconColor: 'white'
+      })
+    }
+  }*/
+		});
+		g.on('loaded', function(e) {
+			
+		  		map.fitBounds(e.target.getBounds());
+		});
+		g.on("addline",function(e){
+			el.addData(e.line);
+		});
+		g.addTo(map);
+		map.addLayer(service);
+		
+/*		L.marker([-13.5199,-71.9762], {icon: L.AwesomeMarkers.icon({icon: 'spinner', prefix: 'fa', markerColor: 'red', spin:true}) }).addTo(map);
+		
+		
+    L.marker([51.941196,4.512291], {icon: L.AwesomeMarkers.icon({icon: 'spinner', prefix: 'fa', markerColor: 'red', spin:true}) }).addTo(map);
+    L.marker([51.927913,4.521303], {icon: L.AwesomeMarkers.icon({icon: 'coffee', prefix: 'fa', markerColor: 'red', iconColor: '#f28f82'}) }).addTo(map);
+    L.marker([51.936063,4.502077], {icon: L.AwesomeMarkers.icon({icon: 'cog', prefix: 'fa', markerColor: 'purple', iconColor: 'black'}) }).addTo(map);
+    L.marker([51.932835,4.506969], {icon: L.AwesomeMarkers.icon({icon: 'glass', prefix: 'fa', markerColor: 'green'}) }).addTo(map);
+    L.marker([51.930295,4.515209], {icon: L.AwesomeMarkers.icon({icon: 'shopping-cart', prefix: 'fa', markerColor: 'blue'}) }).addTo(map);
+    L.marker([51.930083,4.507742], {icon: L.AwesomeMarkers.icon({icon: 'info', prefix: 'fa', markerColor: 'orange'}) }).addTo(map);
+
+    L.marker([51.930454,4.527054], {icon: L.AwesomeMarkers.icon({icon: 'group', prefix: 'fa', markerColor: 'darkred'}) }).addTo(map);
+    L.marker([51.929607,4.527054], {icon: L.AwesomeMarkers.icon({icon: 'arrow-right', prefix: 'fa', markerColor: 'darkblue'}) }).addTo(map);
+    L.marker([51.928919,4.528856], {icon: L.AwesomeMarkers.icon({icon: 'twitter', prefix: 'fa', markerColor: 'cadetblue'}) }).addTo(map);
+    L.marker([51.930295,4.530745], {icon: L.AwesomeMarkers.icon({icon: 'phone', prefix: 'fa', markerColor: 'darkpurple'}) }).addTo(map);
+    L.marker([51.925055,4.512806], {icon: L.AwesomeMarkers.icon({icon: 'ambulance', prefix: 'fa', markerColor: 'darkgreen'}) }).addTo(map);
+    L.marker([51.925902,4.505768], {icon: L.AwesomeMarkers.icon({icon: 'medkit', prefix: 'fa', markerColor: 'darkblue'}) }).addTo(map);
+
+*/
+
+	</script>
+</body>
+</html>
