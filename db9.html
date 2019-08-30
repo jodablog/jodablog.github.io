@@ -51,9 +51,74 @@
 			attr = '<a href="https://www.opentopomap.org/">OpenTopoMap</a>',
 			service = new L.TileLayer(url, {subdomains:"abc",attribution:attr});
 			
-		var url2 = 'http://144.76.234.106/cgi-bin/ta/tilecache.py/1.0.0/topomapper_v2/{z}/{x}/{y}.jpg'
-			attr2 = 'SovietTopo'
+		var url2 = 'http://144.76.234.106/cgi-bin/ta/tilecache.py/1.0.0/topomapper_v2/{z}/{x}/{y}.jpg',
+			attr2 = 'SovietTopo',
 			service2 = new L.TileLayer(url2, {attribution:attr2});
+			
+		var url3 = 'http://mt{s}.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}',
+			attr3 = '<a href="https://maps.google.com/">GoogleSatellite</a>',
+			service3 = new L.TileLayer(url3, {subdomains:"0123",attribution:attr3});
+			
+		var url4 = 'https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i{z}!2i{x}!3i{y}!4i256!2m3!1e0!2sm!3i354024025!3m9!2sen!3sUS!5e18!12m1!1e50!12m3!1e37!2m1!1ssmartmaps!4e0&token=40242',
+			attr4 = '<a href="https://maps.google.com/">Google</a>',
+			overlay1 = new L.TileLayer(url4, {subdomains:"0123",attribution:attr3});
+			
+		var url5 = 'http://gps.tile.openstreetmap.org/lines/{z}/{x}/{y}.png',
+			overlay2 = new L.TileLayer(url5);
+			
+		var url6 = 'http://144.76.234.106/cgi-bin/ta/tilecache.py/1.0.0/hillshading_v3/{z}/{x}/{y}.jpg',
+			overlay3 = new L.TileLayer(url6);
+			
+		var url7 = 'http://tile.openstreetmap.org/{z}/{x}/{y}.png',
+			attr7 = '<a href="https://www.openstreetmap.org/">OSM</a>',
+			service4 = new L.TileLayer(url7, {attribution:attr7});
+			
+		var url8 = 'http://mt{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
+			attr8 = '<a href="https://maps.google.com/">GoogleTerrain</a>',
+			service8 = new L.TileLayer(url8, {subdomains:"0123",attribution:attr8});
+			
+		var url9 = 'http://mt{s}.google.com/vt/x={x}&y={y}&z={z}',
+			attr9 = '<a href="https://maps.google.com/">GoogleStreet</a>',
+			service9 = new L.TileLayer(url9, {subdomains:"0123",attribution:attr9});
+		
+		var url10 = 'http://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png',
+			overlay10 = new L.TileLayer(url10);
+			
+		
+		/*
+		 * rnc_nz  nautical nz
+		 * FSTopo  us forest topo
+ 		 * ICGC_Catalunya catalonia topo
+ 		 * cantopo canada topo partial
+		 * ustopo_neu_v2 us satellite with topo overlay
+ 		 * relief_shaded_z hillshading reversed z
+		 * worldmap03 nothing?
+ 		 * rnc_us us nautical
+ 		 * relief_gstyle_gmerc_z
+		 * scan_50k ??
+ 		 * Labels_Sat_merc_z
+		 * topowebb sweden topo
+ 		 * ca_topos_v2 central america topo
+ 		 * aus_wa_topo ??
+ 		 * relief_physical_z
+		 * LS7_v2-gmerc_labels_z
+		 * basic ??
+ 		 * earth_at_night_v2 earth at night
+ 		 * aus_vic_topo ??
+ 		 * uk_topo_v2 uk topo
+ 		 * na_topos_v2 north america topo
+ 		 * topomapper_v2 soviet topo
+ 		 * relief_vcf_z ??
+ 		 * nz_topos_v2 new zealand topo
+ 		 * ign_mtn_raster ign spain
+		 * hillshading_v3 hillshading
+		 * dom_rep_haiti_topos_v2 dom rep haiti topo
+		 * LS7_v2-gmerc_z ??
+		
+		*/
+		
+		
+
 
 		var pageWidth = document.documentElement.clientWidth,
     		pageHeight = document.documentElement.clientHeight;
@@ -192,11 +257,24 @@
 		
 		var baseMaps = {
 			"OpenTopoMap": service,
-			"SovietTopo": service2
+			"SovietTopo": service2,
+			"OpenStreetMap": service4,
+			"GoogleSatellite": service3,
+			"GoogleTerrain": service8,
+			"GoogleStreet": service9
+			
+			
+		};
+		
+		var overlayMaps = {
+    		"GoogleLabels": overlay1,
+    		"OSMTraces":  overlay2,
+    		"Hillshading": overlay3,
+    		"HikingRoutes": overlay10
 		};
 		
 		map.addLayer(service);
-		L.control.layers(baseMaps).addTo(map);
+		L.control.layers(baseMaps, overlayMaps).addTo(map);
 		
 /*		L.marker([-13.5199,-71.9762], {icon: L.AwesomeMarkers.icon({icon: 'spinner', prefix: 'fa', markerColor: 'red', spin:true}) }).addTo(map);
 		
