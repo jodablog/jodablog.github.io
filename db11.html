@@ -44,7 +44,11 @@
 
 	<script type="text/javascript">
 	
-	L.Browser.touch = false;
+	if (L.Browser.mobile) {
+		L.Browser.touch = true;
+	} else {
+		L.Browser.touch = false;
+	}
 	
 		var map = new L.Map('map');
 
