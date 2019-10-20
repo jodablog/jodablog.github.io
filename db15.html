@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>JODA Tracks</title>
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+	 <style>
+	   html, body, #map {
+	      height:100%;
+	      width:100%;
+	      padding:0px;
+	      margin:0px;
+	   }
+	</style>
+	
+ 	<style>/*#map { width: 800px; height: 500px; }
+.info { padding: 6px 8px; font: 14px/16px Arial, Helvetica, sans-serif; background: white; background: rgba(255,255,255,0.8); box-shadow: 0 0 15px rgba(0,0,0,0.2); border-radius: 5px; } .info h4 { margin: 0 0 5px; color: #777; }*/
+.legend { text-align: left; line-height: 18px; color: #555; background: rgba(255, 255, 255, 0.85); padding: 4px 4px; border-radius: 3px;box-shadow: 0 0 15px rgba(0, 0, 0, 0.2); } .legend i { width: 18px; height: 18px; float: left; margin-right: 8px; opacity: 0.7; }</style>
+	
+	
+<!--  	<style>
+	
+
+
+/*Legend specific*/
+.legend {
+  padding: 6px 8px;
+  font: 14px Arial, Helvetica, sans-serif;
+  background: white;
+  background: rgba(255, 255, 255, 0.8);
+  /*box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);*/
+  /*border-radius: 5px;*/
+	
+	</style> -->
+	
+	
+	<!-- Elevation d3 -->
+	<script src="resources/d3.v3.min.js" charset="utf-8"></script>
+	<!-- Leaflet css -->
+	<!-- <link rel="stylesheet" href="../leaflet/leaflet.css" /> -->
+
+	<!-- Fontawesome -->
+<!--	<link href="http://netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.css" rel="stylesheet"> -->
+	<link href="resources/fa/5.10.2/css/all.css" rel="stylesheet">
+    <link rel="stylesheet" href="resources/awesome-markers/leaflet.awesome-markers.css">
+    <link rel="stylesheet" href="resources/leaflet/leaflet.css" />
+    
+	<!-- Alternative Fontawesome
+	<script src="https://kit.fontawesome.com/906ca78bc1.js"></script>
+	<link rel="stylesheet" href="http://code.ionicframework.com/ionicons/1.5.2/css/ionicons.min.css">
+	<link rel="stylesheet" href="../dist/leaflet.awesome-markers.css">
+	<script src="../dist/leaflet.awesome-markers.js"></script> -->
+
+	<!-- Elevation css -->
+	<!-- <link rel="stylesheet" href="../dist/leaflet.elevation-0.0.4.css" /> -->
+	<link rel="stylesheet" href="resources/elevation-themes/css/themes/black.css" />
+	<script type="text/javascript" src="resources/leaflet/leaflet.js"></script>
+	<script type="text/javascript" src="resources/leaflet-elevation/leaflet.elevation-0.0.4.min.js"></script>
+	
+	<!-- Leaflet GPX -->
+	<script type="text/javascript" src="resources/leaflet-gpx/gpx.js"></script>
+</head>
+<body>
+
+	<div id="map"></div>
+	<script src="resources/awesome-markers/leaflet.awesome-markers.js"></script>
+
+	<script type="text/javascript">
+	
+	if (L.Browser.mobile) {
+		L.Browser.touch = true;
+	} else {
+		L.Browser.touch = false;
+	}
+	
+		var map = new L.Map('map');
+
+		var url = 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+			attr = '<a href="https://www.opentopomap.org/">OpenTopoMap</a>',
+			service = new L.TileLayer(url, {subdomains:"abc",attribution:attr});
+			
+		var url2 = 'http://144.76.234.106/cgi-bin/ta/tilecache.py/1.0.0/topomapper_v2/{z}/{x}/{y}.jpg',
+			attr2 = 'SovietTopo',
+			service2 = new L.TileLayer(url2, {attribution:attr2});
+			
+		var url3 = 'http://mt{s}.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}',
+			attr3 = '<a href="https://maps.google.com/">GoogleSatellite</a>',
+			service3 = new L.TileLayer(url3, {subdomains:"0123",attribution:attr3});
+			
+		var url4 = 'https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i{z}!2i{x}!3i{y}!4i256!2m3!1e0!2sm!3i354024025!3m9!2sen!3sUS!5e18!12m1!1e50!12m3!1e37!2m1!1ssmartmaps!4e0&token=40242',
+			attr4 = '<a href="https://maps.google.com/">Google</a>',
+			overlay1 = new L.TileLayer(url4, {subdomains:"0123",attribution:attr3});
+			
+		var url5 = 'http://gps.tile.openstreetmap.org/lines/{z}/{x}/{y}.png',
+			overlay2 = new L.TileLayer(url5);
+			
+		var url6 = 'http://144.76.234.106/cgi-bin/ta/tilecache.py/1.0.0/hillshading_v3/{z}/{x}/{y}.jpg',
+			overlay3 = new L.TileLayer(url6);
+			
+		var url7 = 'http://tile.openstreetmap.org/{z}/{x}/{y}.png',
+			attr7 = '<a href="https://www.openstreetmap.org/">OSM</a>',
+			service4 = new L.TileLayer(url7, {attribution:attr7});
+			
+		var url8 = 'http://mt{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
+			attr8 = '<a href="https://maps.google.com/">GoogleTerrain</a>',
+			service8 = new L.TileLayer(url8, {subdomains:"0123",attribution:attr8});
+			
+		var url9 = 'http://mt{s}.google.com/vt/x={x}&y={y}&z={z}',
+			attr9 = '<a href="https://maps.google.com/">GoogleStreet</a>',
+			service9 = new L.TileLayer(url9, {subdomains:"0123",attribution:attr9});
+		
+		var url10 = 'http://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png',
+			overlay10 = new L.TileLayer(url10);
+			
+		
+		/*
+		 * rnc_nz  nautical nz
+		 * FSTopo  us forest topo
+ 		 * ICGC_Catalunya catalonia topo
+ 		 * cantopo canada topo partial
+		 * ustopo_neu_v2 us satellite with topo overlay
+ 		 * relief_shaded_z hillshading reversed z
+		 * worldmap03 nothing?
+ 		 * rnc_us us nautical
+ 		 * relief_gstyle_gmerc_z
+		 * scan_50k ??
+ 		 * Labels_Sat_merc_z
+		 * topowebb sweden topo
+ 		 * ca_topos_v2 central america topo
+ 		 * aus_wa_topo ??
+ 		 * relief_physical_z
+		 * LS7_v2-gmerc_labels_z
+		 * basic ??
+ 		 * earth_at_night_v2 earth at night
+ 		 * aus_vic_topo ??
+ 		 * uk_topo_v2 uk topo
+ 		 * na_topos_v2 north america topo
+ 		 * topomapper_v2 soviet topo
+ 		 * relief_vcf_z ??
+ 		 * nz_topos_v2 new zealand topo
+ 		 * ign_mtn_raster ign spain
+		 * hillshading_v3 hillshading
+		 * dom_rep_haiti_topos_v2 dom rep haiti topo
+		 * LS7_v2-gmerc_z ??
+		
+		*/
+		
+		
+
+
+		var pageWidth = document.documentElement.clientWidth,
+    		pageHeight = document.documentElement.clientHeight;
+    /*
+  // Creates a red marker with the coffee icon
+  var redMarker = L.AwesomeMarkers.icon({
+    icon: 'coffee',
+    markerColor: 'red'
+  });
+      
+  L.marker([51.941196,4.512291], {icon: redMarker}).addTo(map);*/
+
+		var el = L.control.elevation({
+  	position: "bottomright",
+	theme: "black-theme", //default: lime-theme
+	width: 0.9 * pageWidth,
+	height: 0.35 * pageHeight,
+	margins: {
+		top: 10,
+		right: 25,
+		bottom: 30,
+		left: 60
+	},
+	useHeightIndicator: true, //if false a marker is drawn at map position
+	interpolation: "linear", //see https://github.com/mbostock/d3/wiki/SVG-Shapes#wiki-area_interpolate
+	hoverNumber: {
+		decimalsX: 1, //decimals on distance (always in km)
+		decimalsY: 0, //deciamls on hehttps://www.npmjs.com/package/leaflet.coordinatesight (always in m)
+		formatter: undefined //custom formatter function may be injected
+	},
+	xTicks: undefined, //number of ticks in x axis, calculated by default according to width
+	yTicks: undefined, //number of ticks on y axis, calculated by default according to height
+	collapsed: true,  //collapsed mode, show chart on click or mouseover
+	imperial: false    //display imperial units instead of metric
+});
+		el.addTo(map);
+		var g=new L.GPX("resources/gpx/20191019Joda100Sort.gpx",
+		
+		 {
+		 	/*polyline_options: {
+    color: 'darkred', //423730 a23336
+    opacity: 0.75,
+    weight: 3,
+    lineCap: 'round'
+  },*/
+			async: true,
+  			/*marker_options: {
+			    startIconUrl: '../lib/leaflet-gpx/campsite-15.svg',
+			    endIconUrl: ''/*L.AwesomeMarkers.icon({
+        icon: 'coffee',
+        prefix: 'fa',
+        markerColor: 'blue',
+        iconColor: 'white'
+      })
+			   ,
+			    shadowUrl: './lib/leaflet-gpx/pin-shadow.png'
+
+			  }*/
+			  
+			  
+			   marker_options: {
+			   	
+			   	startIconUrl: 'resources/blank.png',
+			   	endIconUrl: 'resources/blank.png',
+			   	shadowUrl: 'resources/blank.png',
+			   	/*startIcon: L.AwesomeMarkers.icon({icon: 'flag', prefix: 'fa', markerColor: 'darkblue'}),
+			   	endIcon: L.AwesomeMarkers.icon({icon: 'flag-checkered', prefix: 'fa', markerColor: 'darkred'}),*/
+			   	wptIcons: {
+      'Camping': new L.AwesomeMarkers.icon({
+        icon: 'campground',
+        prefix: 'fa',
+        markerColor: 'black',
+        iconColor: 'white'
+      }),
+      
+            'Building': new L.AwesomeMarkers.icon({
+        icon: 'home',
+        prefix: 'fa',
+        markerColor: 'black',
+        iconColor: 'white'
+      }),
+      
+        'Bike Trail': new L.AwesomeMarkers.icon({
+        icon: 'bicycle',
+        prefix: 'fa',
+        markerColor: 'black',
+        iconColor: 'white'
+      }),
+      
+     	'Drinking Water': new L.AwesomeMarkers.icon({
+        icon: 'swimmer',
+        prefix: 'fa',
+        markerColor: 'black',
+        iconColor: 'white'
+      }),
+      
+      'Car': new L.AwesomeMarkers.icon({
+        icon: 'car',
+        prefix: 'fa',
+        markerColor: 'black',
+        iconColor: 'white'
+      }),
+      
+      'Anchor': new L.AwesomeMarkers.icon({
+        icon: 'ship',
+        prefix: 'fa',
+        markerColor: 'black',
+        iconColor: 'white'
+      }),
+      
+      'Picnic Area': new L.AwesomeMarkers.icon({
+        icon: 'tree',
+        prefix: 'fa',
+        markerColor: 'black',
+        iconColor: 'white'
+      }),
+      
+      
+      'Scenic Area': new L.AwesomeMarkers.icon({
+        icon: 'flag',
+        prefix: 'fa',
+        markerColor: 'black',
+        iconColor: 'white'
+      }),
+      
+      
+      
+       'Airport': new L.AwesomeMarkers.icon({
+        icon: 'plane',
+        prefix: 'fa',
+        markerColor: 'black',
+        iconColor: 'white'
+      })
+      
+    }
+			   	}
+    /*pointMatchers: [
+      {
+        regex: /k/,
+        icon: L.AwesomeMarkers.icon({icon: 'medkit', prefix: 'fa', markerColor: 'red'})
+        
+      },
+      {
+        regex: /Home/,
+        icon: new L.AwesomeMarkers.icon({
+          icon: 'home',
+          markerColor: 'green',
+          iconColor: 'white'
+        }),
+      }
+    ]
+  }/*
+  
+  
+		  marker_options: {
+    wptIcons: {
+      'Coffee shop': new L.AwesomeMarkers.icon({
+        icon: 'coffee',
+        prefix: 'fa',
+        markerColor: 'blue',
+        iconColor: 'white'
+      })
+    }
+  }*/
+		});
+		g.on('loaded', function(e) {
+			
+		  		map.fitBounds(e.target.getBounds());
+		});
+		g.on("addline",function(e){
+			el.addData(e.line);
+		});
+		g.addTo(map);
+		
+		var baseMaps = {
+			"OpenTopoMap": service,
+			"SovietTopo": service2,
+			"OpenStreetMap": service4,
+			"GoogleSatellite": service3,
+			"GoogleTerrain": service8,
+			"GoogleStreet": service9
+			
+			
+		};
+		
+		var overlayMaps = {
+    		"GoogleLabels": overlay1,
+    		"OSMTraces":  overlay2,
+    		"Hillshading": overlay3,
+    		"HikingRoutes": overlay10
+		};
+		
+		map.addLayer(service);
+		L.control.layers(baseMaps, overlayMaps).addTo(map);
+		L.control.scale({position: 'bottomleft', imperial: false}).addTo(map);
+		
+/*		L.marker([-13.5199,-71.9762], {icon: L.AwesomeMarkers.icon({icon: 'spinner', prefix: 'fa', markerColor: 'red', spin:true}) }).addTo(map);
+		
+		
+    L.marker([51.941196,4.512291], {icon: L.AwesomeMarkers.icon({icon: 'spinner', prefix: 'fa', markerColor: 'red', spin:true}) }).addTo(map);
+    L.marker([51.927913,4.521303], {icon: L.AwesomeMarkers.icon({icon: 'coffee', prefix: 'fa', markerColor: 'red', iconColor: '#f28f82'}) }).addTo(map);
+    L.marker([51.936063,4.502077], {icon: L.AwesomeMarkers.icon({icon: 'cog', prefix: 'fa', markerColor: 'purple', iconColor: 'black'}) }).addTo(map);
+    L.marker([51.932835,4.506969], {icon: L.AwesomeMarkers.icon({icon: 'glass', prefix: 'fa', markerColor: 'green'}) }).addTo(map);
+    L.marker([51.930295,4.515209], {icon: L.AwesomeMarkers.icon({icon: 'shopping-cart', prefix: 'fa', markerColor: 'blue'}) }).addTo(map);
+    L.marker([51.930083,4.507742], {icon: L.AwesomeMarkers.icon({icon: 'info', prefix: 'fa', markerColor: 'orange'}) }).addTo(map);
+
+    L.marker([51.930454,4.527054], {icon: L.AwesomeMarkers.icon({icon: 'group', prefix: 'fa', markerColor: 'darkred'}) }).addTo(map);
+    L.marker([51.929607,4.527054], {icon: L.AwesomeMarkers.icon({icon: 'arrow-right', prefix: 'fa', markerColor: 'darkblue'}) }).addTo(map);
+    L.marker([51.928919,4.528856], {icon: L.AwesomeMarkers.icon({icon: 'twitter', prefix: 'fa', markerColor: 'cadetblue'}) }).addTo(map);
+    L.marker([51.930295,4.530745], {icon: L.AwesomeMarkers.icon({icon: 'phone', prefix: 'fa', markerColor: 'darkpurple'}) }).addTo(map);
+    L.marker([51.925055,4.512806], {icon: L.AwesomeMarkers.icon({icon: 'ambulance', prefix: 'fa', markerColor: 'darkgreen'}) }).addTo(map);
+    L.marker([51.925902,4.505768], {icon: L.AwesomeMarkers.icon({icon: 'medkit', prefix: 'fa', markerColor: 'darkblue'}) }).addTo(map);
+
+*/
+
+/* var legend = L.control({position: 'bottomleft'});
+    legend.onAdd = function (map) {
+
+    var div = L.DomUtil.create('div', 'info legend');
+    labels = ['<strong>Categories</strong>'],
+    categories = ['Road Surface','Signage','Line Markings','Roadside Hazards','Other'];
+
+    for (var i = 0; i < categories.length; i++) {
+
+            div.innerHTML += 
+            labels.push(
+                '<i class="circle" style="background:' + getColor(categories[i]) + '"></i> ' +
+            (categories[i] ? categories[i] : '+'));
+
+        }
+        div.innerHTML = labels.join('<br>');
+    return div;
+    };
+    legend.addTo(map); */
+    
+    /*var legend = L.control({position: 'bottomright'});
+
+legend.onAdd = function (map) {
+
+	var div = L.DomUtil.create('div', 'info legend'),
+		grades = [0, 10, 20, 50, 100, 200, 500, 1000],
+		labels = [];
+
+	// loop through our density intervals and generate a label with a colored square for each interval
+	for (var i = 0; i < grades.length; i++) {
+		div.innerHTML +=
+			'<i style="background:' + getColor(grades[i] + 1) + '"></i> ' +
+			grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+	}
+
+	return div;
+};
+
+legend.addTo(map);*/
+
+/*Legend specific*/
+var legend = L.control({ position: "topleft" });
+
+legend.onAdd = function(map) {
+  var div = L.DomUtil.create("div", "legend");
+//   div.innerHTML += "<b>Tegnforklaring</b><br>";
+  
+  div.innerHTML += '<i><hr size="3" color="#161616" width="20" align="center"></i><span>Bike</span><br>';
+  div.innerHTML += '<i><hr size="3" color="#404040" width="20" align="center"></i><span>Hike</span><br>';
+  div.innerHTML += '<i><hr size="3" color="#7F7F7F" width="20" align="center"></i><span>Bus</span><br>';
+  
+  
+/*  div.innerHTML += '<font color="#448D40">--</font><span>Forest</span><br>';
+  div.innerHTML += '<i style="background: #E6E696"></i><span>Land</span><br>';
+  div.innerHTML += '<i style="background: #E8E6E0"></i><span>Residential</span><br>';
+  div.innerHTML += '<i style="background: #FFFFFF"></i><span>Ice</span><br>';
+  div.innerHTML += '<i class="icon" style="background-image: url(https://d30y9cdsu7xlg0.cloudfront.net/png/194515-200.png);background-repeat: no-repeat;"></i><span>Grænse</span><br>';
+
+*/
+  return div;
+};
+
+legend.addTo(map);
+
+	</script>
+</body>
+</html>
