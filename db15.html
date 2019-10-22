@@ -66,6 +66,10 @@
 
 	<script type="text/javascript">
 	
+	
+	var gpxpath = "resources/gpx/20191019Joda100Sort.gpx";
+	var dlink = '<a href="' + gpxpath + '"> | Download our GPX</a>';
+
 	if (L.Browser.mobile) {
 		L.Browser.touch = true;
 	} else {
@@ -76,19 +80,19 @@
 
 		var url = 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
 			attr = '<a href="https://www.opentopomap.org/">OpenTopoMap</a>',
-			service = new L.TileLayer(url, {subdomains:"abc",attribution:attr});
+			service = new L.TileLayer(url, {subdomains:"abc",attribution:attr + dlink});
 			
 		var url2 = 'http://144.76.234.106/cgi-bin/ta/tilecache.py/1.0.0/topomapper_v2/{z}/{x}/{y}.jpg',
 			attr2 = 'SovietTopo',
-			service2 = new L.TileLayer(url2, {attribution:attr2});
+			service2 = new L.TileLayer(url2, {attribution:attr2 + dlink});
 			
 		var url3 = 'http://mt{s}.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}',
 			attr3 = '<a href="https://maps.google.com/">GoogleSatellite</a>',
-			service3 = new L.TileLayer(url3, {subdomains:"0123",attribution:attr3});
+			service3 = new L.TileLayer(url3, {subdomains:"0123",attribution:attr3 + dlink});
 			
 		var url4 = 'https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i{z}!2i{x}!3i{y}!4i256!2m3!1e0!2sm!3i354024025!3m9!2sen!3sUS!5e18!12m1!1e50!12m3!1e37!2m1!1ssmartmaps!4e0&token=40242',
 			attr4 = '<a href="https://maps.google.com/">Google</a>',
-			overlay1 = new L.TileLayer(url4, {subdomains:"0123",attribution:attr3});
+			overlay1 = new L.TileLayer(url4, {subdomains:"0123",attribution:attr3 + dlink});
 			
 		var url5 = 'http://gps.tile.openstreetmap.org/lines/{z}/{x}/{y}.png',
 			overlay2 = new L.TileLayer(url5);
@@ -98,15 +102,15 @@
 			
 		var url7 = 'http://tile.openstreetmap.org/{z}/{x}/{y}.png',
 			attr7 = '<a href="https://www.openstreetmap.org/">OSM</a>',
-			service4 = new L.TileLayer(url7, {attribution:attr7});
+			service4 = new L.TileLayer(url7, {attribution:attr7 + dlink});
 			
 		var url8 = 'http://mt{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
 			attr8 = '<a href="https://maps.google.com/">GoogleTerrain</a>',
-			service8 = new L.TileLayer(url8, {subdomains:"0123",attribution:attr8});
+			service8 = new L.TileLayer(url8, {subdomains:"0123",attribution:attr8 + dlink});
 			
 		var url9 = 'http://mt{s}.google.com/vt/x={x}&y={y}&z={z}',
 			attr9 = '<a href="https://maps.google.com/">GoogleStreet</a>',
-			service9 = new L.TileLayer(url9, {subdomains:"0123",attribution:attr9});
+			service9 = new L.TileLayer(url9, {subdomains:"0123",attribution:attr9 + dlink});
 		
 		var url10 = 'http://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png',
 			overlay10 = new L.TileLayer(url10);
@@ -144,8 +148,7 @@
 		
 		*/
 		
-		
-
+	
 
 		var pageWidth = document.documentElement.clientWidth,
     		pageHeight = document.documentElement.clientHeight;
@@ -182,7 +185,7 @@
 	imperial: false    //display imperial units instead of metric
 });
 		el.addTo(map);
-		var g=new L.GPX("resources/gpx/20191019Joda100Sort.gpx",
+		var g=new L.GPX(gpxpath,
 		
 		 {
 		 	/*polyline_options: {
