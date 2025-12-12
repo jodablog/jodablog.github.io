@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+body {
+    background: #222;
+    color: white;
+    font-family: sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+}
+canvas {
+    background: #111;
+    border: 1px solid #555;
+    cursor: grab;
+    touch-action: none;
+}
+canvas:active { cursor: grabbing; }
+
+#keyboard-container {
+    position: relative;
+    width: 100%;
+    height: 350px;
+    margin-top: 10px;
+}
+
+.white {
+    position: absolute;
+    top: 0;
+    border: 1px solid black;
+    z-index: 1;
+    box-sizing: border-box;
+}
+.black {
+    position: absolute;
+    top: 0;
+    border-radius: 0 0 4px 4px;
+    z-index: 2;
+}
+.key-label {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    font-weight: bold;
+    user-select: none;
+    bottom: 5%;
+    line-height: 1;
+}
+.white .key-label { color: black; }
+.black .key-label { color: white; }
+</style>
+</head>
+<body>
+<canvas id="wheel"></canvas>
+<div id="keyboard-container"></div>
+
+<script>
+// ------------------- CONFIG -------------------
+const pianoHeight = 350;
+const outerRFactor = 0.7, innerRFactor = 0.4;
+const FIFTHS_MAJOR = ["C","G","D","A","E","B","F#","Db","Ab","Eb","Bb","F"];
+const RELATIVE_MINORS = ["Am","Em","Bm","F#m","C#m","G#m","D#m","Bbm","Fm","Cm","Gm","Dm"];
+const SCALE_CHORDS = ["C","Dm","Em","F","G","Am","Bm"];
+const SCALE_POSITIONS_ANGLE = [0,-30,30,-30,30,0,60];
+const SCALE_POSITIONS_RADIUS = [outerRFactor,innerRFactor,innerRFactor,outerRFactor,outerRFactor,innerRFactor,innerRFactor];
+
+// ------------------- CANVAS & CONTEXT -------------------
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+let cx, cy, maxR;
+const bgCanvas = document.createElement("canvas");
+const bgCtx = bgCanvas.getContext("2d");
+
+// ------------------- RESIZE -------------------
+function resizeCanvas(){
+    const availableHeight = window.innerHeight - pianoHeight - 20;
+    const width = window.innerWidth;
+    const height = Math.min(width, availableHeight);
+    canvas.width = width;
+    canvas.height = height;
+    cx = canvas.width/2;
+    cy = canvas.height/2;
+    maxR = height/2*0.9;
+    bgCanvas.width = canvas.width;
+    bgCanvas.height = canvas.height;
+    drawBackground();
+    redraw(true);
+}
+window.addEventListener("resize", resizeCanvas);
+
+// ------------------- BACKGROUND -------------------
+function drawBackground(){
+    const imageData = bgCtx.createImageData(canvas.width, canvas.height);
+    for(let y=0;y<canvas.height;y++){
+        for(let x=0;x<canvas.width;x++){
+            const dx=x-cx, dy=-(y-cy);
+            const r=Math.sqrt(dx*dx+dy*dy)/maxR;
+            const theta=Math.atan2(dy,dx);
+            let hue=(theta*180/Math.PI+360-90)%360;
+            const light=Math.min(1,r);
+            const col=hslToRgb(hue/360,1,light);
+            const idx=(y*canvas.width+x)*4;
+            imageData.data[idx]=col[0];
+            imageData.data[idx+1]=col[1];
+            imageData.data[idx+2]=col[2];
+            imageData.data[idx+3]=255;
+        }
+    }
+    bgCtx.putImageData(imageData,0,0);
+}
+
+// ------------------- DRAGGING -------------------
+let currentShift=0;
+let dragging=false, startAngle=0;
+function normalizeAngle(a){ while(a>=180)a-=360; while(a<-180)a+=360; return a;}
+function getPointerAngle(x,y){ 
+    const rect=canvas.getBoundingClientRect();
+    const dx=x-rect.left-cx; 
+    const dy=y-rect.top-cy; 
+    return Math.atan2(dy,dx)*180/Math.PI; 
+}
+function startDrag(x,y){ dragging=true; startAngle=getPointerAngle(x,y)-currentShift; }
+function moveDrag(x,y){ 
+    if(!dragging) return; 
+    const angle=getPointerAngle(x,y); 
+    currentShift=normalizeAngle(angle-startAngle); 
+    redraw(false); 
+}
+function endDrag(){ 
+    if(!dragging) return; 
+    dragging=false; 
+    const targetShift = Math.round(currentShift/30)*30;
+    smoothSnap(currentShift,targetShift); 
+}
+function smoothSnap(from,to){
+    const duration=200; const startTime=performance.now();
+    function step(now){
+        const t=Math.min(1,(now-startTime)/duration);
+        const eased=t*t*(3-2*t);
+        currentShift = normalizeAngle(from + (to-from)*eased);
+        redraw(false);
+        if(t<1) requestAnimationFrame(step);
+        else{ currentShift=to; redraw(true); }
+    }
+    requestAnimationFrame(step);
+}
+
+// ------------------- CIRCLES -------------------
+function drawLabels(){
+    const fontSize = 36;
+    FIFTHS_MAJOR.forEach((chord,i)=>{
+        const rad=outerRFactor*maxR;
+        const angleRad=(i*30-90)*Math.PI/180;
+        const x=Math.round(cx+rad*Math.cos(angleRad));
+        const y=Math.round(cy+rad*Math.sin(angleRad));
+        ctx.fillStyle="black";
+        ctx.font=fontSize+"px sans-serif";
+        ctx.textAlign="center";
+        ctx.textBaseline="middle";
+        ctx.fillText(chord,x,y);
+    });
+    RELATIVE_MINORS.forEach((chord,i)=>{
+        const rad=innerRFactor*maxR;
+        const angleRad=(i*30-90)*Math.PI/180;
+        const x=Math.round(cx+rad*Math.cos(angleRad));
+        const y=Math.round(cy+rad*Math.sin(angleRad));
+        ctx.fillStyle="black";
+        ctx.font=fontSize+"px sans-serif";
+        ctx.textAlign="center";
+        ctx.textBaseline="middle";
+        ctx.fillText(chord,x,y);
+    });
+    ctx.beginPath();
+    ctx.arc(cx,cy,7,0,2*Math.PI);
+    ctx.fillStyle="white";
+    ctx.fill();
+    ctx.strokeStyle="#555";
+    ctx.stroke();
+}
+
+const SHARP_TO_FLAT = {"C#":"Db","D#":"Eb","F#":"Gb","G#":"Ab","A#":"Bb"};
+const FLAT_TO_SHARP = {"Db":"C#","Eb":"D#","Gb":"F#","Ab":"G#","Bb":"A#"};
+
+function normalizeNoteForAcc(note, tonic) {
+    const useFlats = tonic.includes("b");
+    const useSharps = tonic.includes("#") || tonic === "B";
+
+    if (useFlats) {
+        if (note.includes("#")) return SHARP_TO_FLAT[note] || note;
+        return note;
+    } else if (useSharps) {
+        if (note.includes("b")) return FLAT_TO_SHARP[note] || note;
+        return note;
+    } else {
+        return note;
+    }
+}
+
+// ------------------- DRAW CIRCLES -------------------
+function drawCircles(showLabels){
+    const fontSize = 32;
+    const circleRadius = 40;
+
+    const tonicIdx = Math.round(currentShift/30 + 12)%12;
+    const tonic = FIFTHS_MAJOR[tonicIdx];
+
+    SCALE_CHORDS.forEach((chord,i)=>{
+        const radius = SCALE_POSITIONS_RADIUS[i]*maxR;
+        let angleDeg = SCALE_POSITIONS_ANGLE[i]+currentShift;
+        if(showLabels) angleDeg = Math.round(angleDeg/30)*30;
+        const angleRad = (angleDeg-90)*Math.PI/180;
+        const x = Math.round(cx + radius*Math.cos(angleRad));
+        const y = Math.round(cy + radius*Math.sin(angleRad));
+        const px = bgCtx.getImageData(x,y,1,1).data;
+        const color = `rgb(${px[0]},${px[1]},${px[2]})`;
+        ctx.beginPath();
+        ctx.arc(x,y,circleRadius,0,2*Math.PI);
+        ctx.fillStyle=color;
+        ctx.fill();
+        ctx.lineWidth=(radius===outerRFactor*maxR && i===0)?4:1;
+        ctx.strokeStyle="#000";
+        ctx.stroke();
+        ctx.lineWidth=1;
+
+        if(showLabels){
+            let display="";
+            const wheelStep=Math.round(angleDeg/30);
+            const idx=(wheelStep+12)%12;
+            if(radius===outerRFactor*maxR){
+                display = normalizeNoteForAcc(FIFTHS_MAJOR[idx], tonic);
+            } else {
+                display = RELATIVE_MINORS[idx];
+                if(i===SCALE_CHORDS.length-1) display = display.replace(/m$/,"\u00B0");
+                const notePart = display.replace(/m$|°$/,"");
+                display = display.replace(notePart, normalizeNoteForAcc(notePart, tonic));
+            }
+            ctx.fillStyle="black";
+            ctx.font=fontSize+"px sans-serif";
+            ctx.textAlign="center";
+            ctx.textBaseline="middle";
+            ctx.fillText(display,x,y);
+        }
+    });
+}
+
+// ------------------- PIANO -------------------
+const container=document.getElementById("keyboard-container");
+const WHITE_KEYS=["C","D","E","F","G","A","B"];
+const BLACK_POS={"C#":0.7,"D#":1.7,"F#":3.7,"G#":4.7,"A#":5.7};
+const OCTAVES=2;
+const START_OCTAVE=4;
+let pianoKeys=[];
+function createPiano(){
+    container.innerHTML = "";
+    pianoKeys = [];
+    const whiteCount=WHITE_KEYS.length*OCTAVES;
+    const totalWidth=window.innerWidth;
+    const whiteWidth=totalWidth/whiteCount;
+    const blackWidth=whiteWidth*0.6;
+    const labelFont = 24;
+    for(let octave=START_OCTAVE;octave<START_OCTAVE+OCTAVES;octave++){
+        for(let i=0;i<7;i++){
+            const w = WHITE_KEYS[i];
+            const key = document.createElement("div");
+            key.className = "white";
+            key.style.width = whiteWidth+"px";
+            key.style.height = pianoHeight+"px";
+            key.style.left = ((i+(octave-START_OCTAVE)*7)*whiteWidth)+"px";
+            key.style.backgroundColor = "white";
+            const label = document.createElement("div");
+            label.className = "key-label";
+            label.style.fontSize = labelFont+"px";
+            label.innerText = w;
+            key.appendChild(label);
+            container.appendChild(key);
+            pianoKeys.push({div:key,note:w,baseColor:"white"});
+        }
+        for(let [sharp,offset] of Object.entries(BLACK_POS)){
+            const key = document.createElement("div");
+            key.className = "black";
+            key.style.width = blackWidth+"px";
+            key.style.height = pianoHeight*0.6+"px";
+            key.style.left = ((offset+(octave-START_OCTAVE)*7)*whiteWidth)+"px";
+            key.style.backgroundColor = "black";
+            const label = document.createElement("div");
+            label.className = "key-label";
+            label.style.fontSize = labelFont+"px";
+            label.innerText = sharp;
+            key.appendChild(label);
+            container.appendChild(key);
+            pianoKeys.push({div:key,note:sharp,baseColor:"black"});
+        }
+    }
+}
+window.addEventListener("resize", createPiano);
+
+// ------------------- HIGHLIGHT PIANO -------------------
+function highlightPiano(){
+    const tonicIdx = Math.round(currentShift/30 + 12)%12;
+    const tonic = FIFTHS_MAJOR[tonicIdx];
+
+    let circleNotes = [];
+    SCALE_CHORDS.forEach((chord,i)=>{
+        const radius = SCALE_POSITIONS_RADIUS[i]*maxR;
+        let angleDeg = Math.round((SCALE_POSITIONS_ANGLE[i]+currentShift)/30)*30;
+        const idx = (angleDeg/30 + 12) % 12;
+        let noteName = radius===outerRFactor*maxR ? FIFTHS_MAJOR[idx] : RELATIVE_MINORS[idx];
+        if(i===SCALE_CHORDS.length-1 && radius===innerRFactor*maxR) noteName = noteName.replace(/m$/,"\u00B0");
+        let noteForMatch = noteName.replace(/m$|°$/,"");
+        noteForMatch = normalizeNoteForAcc(noteForMatch, tonic);
+        circleNotes.push({note:noteForMatch,color:`rgb(${bgCtx.getImageData(cx+radius*Math.cos((angleDeg-90)*Math.PI/180),cy+radius*Math.sin((angleDeg-90)*Math.PI/180),1,1).data[0]},${bgCtx.getImageData(cx+radius*Math.cos((angleDeg-90)*Math.PI/180),cy+radius*Math.sin((angleDeg-90)*Math.PI/180),1,1).data[1]},${bgCtx.getImageData(cx+radius*Math.cos((angleDeg-90)*Math.PI/180),cy+radius*Math.sin((angleDeg-90)*Math.PI/180),1,1).data[2]})`});
+    });
+
+    pianoKeys.forEach(k=>{
+        let normalized = k.note.replace(/m$|°$/,"");
+        normalized = normalizeNoteForAcc(normalized, tonic);
+        const match = circleNotes.find(cn => cn.note === normalized);
+        const labelDiv = k.div.querySelector(".key-label");
+        if(match){
+            k.div.style.backgroundColor = match.color;
+            labelDiv.style.color = "black";
+        } else {
+            k.div.style.backgroundColor = k.baseColor;
+            labelDiv.style.color = k.baseColor==="black"?"white":"black";
+        }
+        if(k.baseColor==="black") labelDiv.innerText = normalizeNoteForAcc(k.note, tonic);
+    });
+}
+
+// ------------------- REDRAW -------------------
+function redraw(showLabels){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(bgCanvas,0,0);
+    drawLabels();
+    drawCircles(showLabels);
+    highlightPiano();
+}
+
+// ------------------- INIT -------------------
+canvas.addEventListener("mousedown",(e)=>startDrag(e.clientX,e.clientY));
+canvas.addEventListener("mousemove",(e)=>moveDrag(e.clientX,e.clientY));
+canvas.addEventListener("mouseup",()=>endDrag());
+canvas.addEventListener("mouseleave",()=>endDrag());
+canvas.addEventListener("touchstart",(e)=>{ e.preventDefault(); startDrag(e.touches[0].clientX,e.touches[0].clientY); });
+canvas.addEventListener("touchmove",(e)=>{ e.preventDefault(); moveDrag(e.touches[0].clientX,e.touches[0].clientY); });
+canvas.addEventListener("touchend",(e)=>{ e.preventDefault(); endDrag(); });
+canvas.addEventListener("touchcancel",(e)=>{ e.preventDefault(); endDrag(); });
+
+resizeCanvas();
+createPiano();
+redraw(true);
+
+// ------------------- HSL TO RGB -------------------
+function hslToRgb(h,s,l){
+    let r,g,b;
+    if(s===0){ r=g=b=l*255; }
+    else{
+        const hue2rgb=(p,q,t)=>{
+            if(t<0)t+=1;if(t>1)t-=1;
+            if(t<1/6) return p+(q-p)*6*t;
+            if(t<1/2) return q;
+            if(t<2/3) return p+(q-p)*(2/3-t)*6;
+            return p;
+        };
+        const q = l<0.5?l*(1+s):l+s-l*s;
+        const p = 2*l-q;
+        r=hue2rgb(p,q,h+1/3)*255;
+        g=hue2rgb(p,q,h)*255;
+        b=hue2rgb(p,q,h-1/3)*255;
+    }
+    return [Math.round(r),Math.round(g),Math.round(b)];
+}
+</script>
+</body>
+</html>
