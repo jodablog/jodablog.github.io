@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport"
+  content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Music guesser</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #f4f4f6;
+  color: #111;
+}
+
+header {
+  padding: 1rem;
+  background: #ffffff;
+  position: sticky;
+  top: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  z-index: 10;
+}
+
+h1 {
+  font-size: 1.2rem;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.search-bar {
+  display: flex;
+  gap: 0.5rem;
+}
+
+input {
+  flex: 1;
+  padding: 0.7rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 16px !important; /* iOS zoom fix */
+}
+
+button {
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  border: none;
+  background: #007aff;
+  color: white;
+  cursor: pointer;
+}
+
+main {
+  padding: 1rem;
+}
+
+.song {
+  display: flex;
+  gap: 1rem;
+  background: white;
+  border-radius: 12px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  align-items: center;
+  position: relative; /* For card ID positioning */
+}
+
+.artwork {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  flex-shrink: 0;
+}
+
+.artwork img {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.play-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.35);
+  border-radius: 8px;
+  color: white;
+  font-size: 2rem;
+  opacity: 0;
+}
+
+.artwork:hover .play-overlay,
+.artwork.playing .play-overlay {
+  opacity: 1;
+}
+
+.song-info {
+  flex: 1;
+}
+
+.song-title {
+  font-weight: 600;
+}
+
+.song-artist {
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.song-album {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.song-year {
+  font-weight: 600;
+  margin-top: 0.2rem;
+}
+
+.action-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add { background: #34c759; }
+.remove { background: #ff3b30; }
+
+.assigned-id {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+/* ---------- SCANNER ---------- */
+
+#scannerModal {
+  position: fixed;
+  inset: 0;
+  background: black;
+  display: none;
+  z-index: 999;
+}
+
+#scannerHeader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  z-index: 2;
+}
+
+#scannerHeader button {
+  background: rgba(0,0,0,0.6);
+}
+
+#video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#scannerFooter {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem;
+  text-align: center;
+}
+
+#scanSuccess {
+  position: absolute;
+  inset: 0;
+  background: rgba(52, 199, 89, 0.85);
+  color: white;
+  font-size: 3rem;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+/* ---- Menu bar ----  */
+#menuBar {
+  position: sticky;
+  top: 0;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  z-index: 20; /* above header */
+}
+
+#menuBar button {
+  border: none;
+  background: none;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #007aff;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+#menuBar button:hover {
+  background: rgba(0,122,255,0.1);
+}
+
+/* ---------- PLAY GAME ---------- */
+
+#gameOverlay {
+  position: fixed;
+  inset: 0;
+  background: black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  touch-action: manipulation;
+}
+
+#gameIcon {
+  font-size: 5rem;
+  color: rgba(255,255,255,0.85);
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+#resetDbBtn {
+  background: #ff3b30;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+#resetDbBtn:hover {
+  background: #e03028;
+}
+
+#playGameScanner video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#playGameIcon {
+  font-size: 5rem;
+  color: rgba(255,255,255,0.85);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.song-list-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.left-buttons,
+.right-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.blue-btn {
+  background-color: #1e90ff; /* blue */
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.blue-btn:hover {
+  background-color: #0f78d1;
+}
+
+.red-btn {
+  background-color: #ff4d4f; /* red */
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.red-btn:hover {
+  background-color: #d9363e;
+}
+
+
+</style>
+</head>
+
+<body>
+
+<!-- BODY CONTENT -->
+<!-- MENU BAR -->
+<nav id="menuBar">
+  <button onclick="navigate('search')">Add</button>
+  <button onclick="navigate('play')">Play</button>
+  <button onclick="navigate('list')">List</button>
+  <button onclick="navigate('help')">Help</button>
+</nav>
+
+<header id="searchHeader">
+  <!-- <h1>🎵 iTunes Song Search</h1> -->
+  <div class="search-bar">
+    <input id="searchInput" placeholder="Search for songs or artists…" />
+    <button onclick="search()">Search</button>
+  </div>
+</header>
+
+<main id="results">
+  <div style="text-align:center;color:#777;">Search for a song</div>
+</main>
+
+
+
+<main id="songListPage" style="display:none; padding:1rem;">
+  <div style="display:flex; align-items:center; justify-content:space-between;">
+    <!-- <h2 style="margin:0;">🎵 Saved Song List</h2> -->
+    <!-- <button id="resetDbBtn" onclick="resetDatabase()">Reset DB</button> -->
+     <!-- Song list action buttons -->
+<div id="songListActions" class="song-list-actions">
+  <div class="left-buttons">
+    <button id="exportDBBtn" class="blue-btn">Export DB</button>
+    <button id="importDBBtn" class="blue-btn">Import DB</button>
+  </div>
+  <div class="right-buttons">
+    <button id="resetDBBtn" class="red-btn" onclick="resetDatabase()">Reset DB</button>
+  </div>
+  <input type="file" id="importDBFile" accept=".txt" style="display:none;" />
+</div>
+  </div>
+
+  <!-- <div class="search-bar" style="margin-bottom:1rem; margin-top:1rem;">
+    <input id="songListSearch" placeholder="Search saved songs…" />
+    <select id="songListSort">
+      <option value="title">Title</option>
+      <option value="artist">Artist</option>
+      <option value="year">Year</option>
+      <option value="cardId">Card ID</option>
+    </select>
+    <button onclick="renderSongList()">Search / Sort</button>
+  </div> -->
+  <!-- Remove the old Search / Sort button -->
+<div class="search-bar" style="margin-bottom:1rem; margin-top:1rem;">
+  <input id="songListSearch" placeholder="Search saved songs…" />
+  <select id="songListSort">
+    <option value="title">Title</option>
+    <option value="artist">Artist</option>
+    <option value="year">Year</option>
+    <option value="cardId">Card ID</option>
+  </select>
+</div>
+
+  <div id="songListResults" style="min-height:200px; text-align:center; color:#777;">
+    No songs saved yet.
+  </div>
+</main>
+
+<main id="playPage" style="display:none; padding:0; height:100vh; background:black; position:relative;">
+  <div id="playGameOverlay" style="width:100%; height:100%; position:relative;">
+    <div id="playGameIcon">▶</div>
+    <div id="playGameScanner" style="display:none; position:absolute; top:0; left:0; right:0; bottom:0; z-index:15; background:black;"></div>
+  </div>
+</main>
+
+<main id="helpPage" style="display:none; padding:1rem;">
+  <h2>❓ Help</h2>
+  <p style="color:#777;">Instructions and help content will go here.</p>
+</main>
+
+<!-- SCANNER -->
+<div id="scannerModal">
+  <div id="scannerHeader">
+    <button onclick="closeScanner()">✕</button>
+  </div>
+  <video id="video" playsinline></video>
+  <div id="scanSuccess">✓</div>
+  <div id="scannerFooter">
+    <button onclick="manualEntry()">Enter Card ID Manually</button>
+  </div>
+</div>
+
+<script src="https://unpkg.com/jsqr/dist/jsQR.js"></script>
+
+<script>
+let currentlyPlaying = null;
+let playGameAudio = null;
+let playGamePaused = false;
+let scanTrackId = null;
+let STORAGE_KEY = "songCards";
+
+let stream = null;
+let detector = null;
+
+const canvas = document.createElement("canvas");
+const ctx = canvas.getContext("2d");
+
+function getDB() {
+  return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+}
+
+function saveDB(db) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+}
+
+/* ---------- SCANNER ---------- */
+
+async function openScanner(trackId) {
+  scanTrackId = trackId;
+  document.getElementById("scannerModal").style.display = "block";
+  document.getElementById("scanSuccess").style.display = "none";
+
+  stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+  const video = document.getElementById("video");
+  video.srcObject = stream;
+  await video.play();
+
+  if ("BarcodeDetector" in window) {
+    detector = new BarcodeDetector({ formats: ["qr_code"] });
+    scanWithBarcodeDetector();
+  } else {
+    scanWithJsQR();
+  }
+}
+
+function closeScanner() {
+  document.getElementById("scannerModal").style.display = "none";
+  stream?.getTracks().forEach(t => t.stop());
+  stream = null;
+  detector = null;
+}
+
+async function successScan(cardId) {
+  if (scanTrackId === "__GAME__") {
+    // Play mode uses separate logic
+    playGameSuccess(cardId);
+    return;
+  }
+
+  cardId = cardId.trim();
+  if (navigator.vibrate) navigator.vibrate(200);
+
+  const db = getDB();
+  let duplicateTrackId = null;
+
+  for (const key in db) {
+    if (db[key] === cardId && key != scanTrackId) {
+      duplicateTrackId = key;
+      break;
+    }
+  }
+
+  if (duplicateTrackId) {
+    let existingSongName = "another track";
+    try {
+      const res = await fetch(`https://itunes.apple.com/lookup?id=${duplicateTrackId}`);
+      const data = await res.json();
+      if (data.results && data.results.length) {
+        const song = data.results[0];
+        const year = new Date(song.releaseDate).getFullYear();
+        existingSongName = `${song.trackName} by ${song.artistName} (${year})`;
+      }
+    } catch {}
+    const overwrite = confirm(`Card ID "${cardId}" is already assigned to "${existingSongName}". Overwrite?`);
+    if (!overwrite) {
+      document.getElementById("scanSuccess").style.display = "none";
+      return;
+    }
+    delete db[duplicateTrackId];
+  }
+
+  db[scanTrackId] = cardId;
+  saveDB(db);
+
+  document.getElementById("scanSuccess").style.display = "flex";
+  setTimeout(() => { closeScanner(); search(); }, 300);
+}
+
+async function scanWithBarcodeDetector() {
+  if (!detector || !stream) return;
+  const video = document.getElementById("video");
+  const codes = await detector.detect(video);
+  if (codes.length) { successScan(codes[0].rawValue); return; }
+  requestAnimationFrame(scanWithBarcodeDetector);
+}
+
+function scanWithJsQR() {
+  if (!stream) return;
+  const video = document.getElementById("video");
+  if (video.videoWidth === 0) { requestAnimationFrame(scanWithJsQR); return; }
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  ctx.drawImage(video, 0, 0);
+  const img = ctx.getImageData(0,0,canvas.width,canvas.height);
+  const code = jsQR(img.data, canvas.width, canvas.height);
+  if (code) { successScan(code.data); return; }
+  requestAnimationFrame(scanWithJsQR);
+}
+
+function manualEntry() {
+  const id = prompt("Enter Card ID:");
+  if (id) successScan(id);
+}
+
+/* ---------- SEARCH ---------- */
+async function search() {
+  const term = searchInput.value.trim();
+  if (!term) return;
+
+  results.innerHTML = "Loading…";
+
+  const isIdSearch = /^\d+$/.test(term);
+  const url = isIdSearch
+    ? `https://itunes.apple.com/lookup?id=${term}`
+    : `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=10`;
+
+  try {
+    // ✅ JSONP (CORS-safe)
+    const data = await itunesJSONP(url);
+    const db = getDB();
+
+    results.innerHTML = "";
+
+    if (!data.results || !data.results.length) {
+      results.innerHTML = "No results found.";
+      return;
+    }
+
+    data.results.forEach(song => {
+      if (!song.previewUrl) return;
+
+      const year = new Date(song.releaseDate).getFullYear();
+      const audio = new Audio(song.previewUrl);
+
+      const row = document.createElement("div");
+      row.className = "song";
+
+      const artwork = document.createElement("div");
+      artwork.className = "artwork";
+
+      const img = document.createElement("img");
+      img.src = song.artworkUrl100.replace("100x100bb", "300x300bb");
+
+      const overlay = document.createElement("div");
+      overlay.className = "play-overlay";
+      overlay.textContent = "▶";
+
+      artwork.append(img, overlay);
+
+      artwork.onclick = () => {
+        if (currentlyPlaying && currentlyPlaying !== audio) {
+          currentlyPlaying.pause();
+          document.querySelectorAll(".artwork.playing").forEach(a => {
+            a.classList.remove("playing");
+            a.querySelector(".play-overlay").textContent = "▶";
+          });
+        }
+
+        if (audio.paused) {
+          audio.play().catch(() => {});
+          overlay.textContent = "❚❚";
+          artwork.classList.add("playing");
+          currentlyPlaying = audio;
+        } else {
+          audio.pause();
+          overlay.textContent = "▶";
+          artwork.classList.remove("playing");
+        }
+
+        audio.onended = () => {
+          overlay.textContent = "▶";
+          artwork.classList.remove("playing");
+          currentlyPlaying = null;
+        };
+      };
+
+      const info = document.createElement("div");
+      info.className = "song-info";
+      info.innerHTML = `
+        <div class="song-title">${song.trackName}</div>
+        <div class="song-artist">${song.artistName}</div>
+        <div class="song-album">${song.collectionName}</div>
+        <div class="song-year">${year}</div>
+      `;
+
+      const btn = document.createElement("button");
+      const assignedCard = db[song.trackId];
+
+      if (assignedCard) {
+        btn.className = "action-btn remove";
+        btn.textContent = "–";
+
+        const assignedDiv = document.createElement("div");
+        assignedDiv.className = "assigned-id";
+        assignedDiv.textContent = assignedCard;
+        row.appendChild(assignedDiv);
+      } else {
+        btn.className = "action-btn add";
+        btn.textContent = "+";
+      }
+
+      btn.onclick = () => {
+        if (db[song.trackId]) {
+          delete db[song.trackId];
+          saveDB(db);
+          search();
+        } else {
+          openScanner(song.trackId);
+        }
+      };
+
+      row.append(artwork, info, btn);
+      results.appendChild(row);
+    });
+
+  } catch (err) {
+    console.error(err);
+    results.innerHTML = "Failed to load search results.";
+  }
+};
+
+const searchInputElement = document.getElementById("searchInput");
+
+searchInputElement.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault(); // prevent form submission if inside a form
+    search();
+  }
+});
+
+</script>
+
+<script>
+// ---------- PLAY GAME PAGE FIX ----------
+
+let playStream = null;
+let playDetector = null;
+const playCanvas = document.createElement("canvas");
+const playCtx = playCanvas.getContext("2d");
+
+function navigate(page) {
+  document.getElementById("results").style.display = "none";
+  document.getElementById("songListPage").style.display = "none";
+  document.getElementById("playPage").style.display = "none";
+  document.getElementById("helpPage").style.display = "none";
+  document.getElementById("searchHeader").style.display = "none";
+
+  switch(page) {
+    case 'search':
+      document.getElementById("results").style.display = "block";
+      document.getElementById("searchHeader").style.display = "block";
+      stopScanPlayGameCard();
+      break;
+    case 'list':
+      document.getElementById("songListPage").style.display = "block";
+      renderSongList();
+      stopScanPlayGameCard();
+      break;
+    case 'play':
+      document.getElementById("playPage").style.display = "block";
+      startGameScanner();
+      break;
+    case 'help':
+      document.getElementById("helpPage").style.display = "block";
+      stopScanPlayGameCard();
+      break;
+  }
+}
+
+<!-- inside startGameScanner / Play Game section -->
+function startGameScanner() {
+  scanTrackId = "__GAME__";
+  scanPlayGameCard();
+}
+
+async function scanPlayGameCard() {
+  const scannerDiv = document.getElementById("playGameScanner");
+  scannerDiv.style.display = "block";
+  scannerDiv.innerHTML = "";
+
+  // Add manual entry button
+  const manualBtn = document.createElement("button");
+  manualBtn.textContent = "Enter Card ID Manually";
+  manualBtn.style.position = "absolute";
+  manualBtn.style.bottom = "1rem";
+  manualBtn.style.left = "50%";
+  manualBtn.style.transform = "translateX(-50%)";
+  manualBtn.style.padding = "0.6rem 1rem";
+  manualBtn.style.background = "#007aff";
+  manualBtn.style.color = "white";
+  manualBtn.style.border = "none";
+  manualBtn.style.borderRadius = "8px";
+  manualBtn.style.zIndex = "20";
+  manualBtn.onclick = () => manualEntryPlay();
+  scannerDiv.appendChild(manualBtn);
+
+  playStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+  const video = document.createElement("video");
+  video.autoplay = true;
+  video.playsInline = true;
+  video.srcObject = playStream;
+  scannerDiv.appendChild(video);
+  await video.play();
+
+  if ("BarcodeDetector" in window) {
+    playDetector = new BarcodeDetector({ formats: ["qr_code"] });
+    scanWithBarcodeDetectorPlay(video);
+  } else {
+    scanWithJsQRPlay(video);
+  }
+}
+
+// ---------- Manual entry for Play Game scanner ----------
+function manualEntryPlay() {
+  const id = prompt("Enter Card ID:");
+  if (!id) return;
+  playGameSuccess(id);
+}
+
+// ---------- Play Game success (uses JSONP) ----------
+async function playGameSuccess(cardId) {
+  playStream?.getTracks().forEach(t => t.stop());
+  playStream = null;
+  playDetector = null;
+  document.getElementById("playGameScanner").style.display = "none";
+
+  cardId = cardId.trim();
+  const db = getDB();
+  const trackId = Object.keys(db).find(id => db[id] === cardId);
+
+  if (!trackId) {
+    alert("No song assigned to this card ID.");
+    return scanPlayGameCard();
+  }
+
+  try {
+    // ✅ JSONP lookup instead of fetch / CORS proxy
+    const data = await itunesJSONP(
+      `https://itunes.apple.com/lookup?id=${trackId}`
+    );
+
+    const song = data.results?.[0];
+    if (!song?.previewUrl) throw "No preview available";
+
+    playGameAudioSong(song.previewUrl);
+
+  } catch (err) {
+    console.error(err);
+    alert("Failed to fetch song preview.");
+    scanPlayGameCard();
+  }
+}
+
+
+async function scanWithBarcodeDetectorPlay(video) {
+  if (!playDetector || !playStream) return;
+  const codes = await playDetector.detect(video);
+  if (codes.length) { playGameSuccess(codes[0].rawValue); return; }
+  requestAnimationFrame(() => scanWithBarcodeDetectorPlay(video));
+}
+
+function scanWithJsQRPlay(video) {
+  if (!playStream) return;
+  if (video.videoWidth === 0) { requestAnimationFrame(() => scanWithJsQRPlay(video)); return; }
+
+  playCanvas.width = video.videoWidth;
+  playCanvas.height = video.videoHeight;
+  playCtx.drawImage(video,0,0,playCanvas.width,playCanvas.height);
+  const imgData = playCtx.getImageData(0,0,playCanvas.width,playCanvas.height);
+  const code = jsQR(imgData.data, playCanvas.width, playCanvas.height);
+  if (code) { playGameSuccess(code.data); return; }
+  requestAnimationFrame(() => scanWithJsQRPlay(video));
+}
+
+// async function playGameSuccess(cardId) {
+//   playStream?.getTracks().forEach(t => t.stop());
+//   playStream = null;
+//   playDetector = null;
+//   document.getElementById("playGameScanner").style.display = "none";
+
+//   cardId = cardId.trim();
+//   const db = getDB();
+//   const trackId = Object.keys(db).find(id => db[id] === cardId);
+
+//   if (!trackId) {
+//     alert("No song assigned to this card ID.");
+//     return scanPlayGameCard();
+//   }
+
+//   try {
+//     const res = await fetch(`https://itunes.apple.com/lookup?id=${trackId}`);
+//     const data = await res.json();
+//     const song = data.results[0];
+//     if (!song?.previewUrl) throw "No preview";
+
+//     playGameAudioSong(song.previewUrl);
+//   } catch {
+//     alert("Failed to fetch song preview.");
+//     scanPlayGameCard();
+//   }
+// }
+
+function playGameAudioSong(previewUrl) {
+  if (playGameAudio) playGameAudio.pause();
+  playGameAudio = new Audio(previewUrl);
+  playGameAudio.play();
+  playGamePaused = false;
+  document.getElementById("playGameIcon").textContent = "❚❚";
+
+  playGameAudio.onended = () => scanPlayGameCard();
+}
+
+document.getElementById("playGameOverlay").addEventListener("click", () => {
+  if (!playGameAudio) return;
+  if (playGamePaused) {
+    playGameAudio.play();
+    document.getElementById("playGameIcon").textContent = "❚❚";
+  } else {
+    playGameAudio.pause();
+    document.getElementById("playGameIcon").textContent = "▶";
+  }
+  playGamePaused = !playGamePaused;
+});
+
+/* ---------- SONG LIST ---------- */
+function itunesJSONP(url) {
+  return new Promise((resolve, reject) => {
+    const callbackName = "cb_" + Math.random().toString(36).slice(2);
+    const script = document.createElement("script");
+
+    window[callbackName] = data => {
+      resolve(data);
+      delete window[callbackName];
+      script.remove();
+    };
+
+    script.onerror = () => {
+      reject(new Error("JSONP request failed"));
+      delete window[callbackName];
+      script.remove();
+    };
+
+    script.src = url + "&callback=" + callbackName;
+    document.body.appendChild(script);
+  });
+}
+
+
+async function renderSongList() {
+  const resultsDiv = document.getElementById("songListResults");
+  const searchTerm = document.getElementById("songListSearch").value.toLowerCase();
+  const sortBy = document.getElementById("songListSort").value;
+
+  const db = getDB();
+  const trackIds = Object.keys(db).filter(id => /^\d+$/.test(id));
+
+  if (!trackIds.length) {
+    resultsDiv.innerHTML = "No songs saved yet.";
+    return;
+  }
+
+  resultsDiv.innerHTML = "Loading…";
+
+  try {
+    // ✅ JSONP batched lookup (CORS-safe)
+    const data = await itunesJSONP(
+      `https://itunes.apple.com/lookup?id=${trackIds.join(",")}`
+    );
+
+    const resultsData = (data.results || []).filter(song => song.previewUrl);
+
+    // ---------- FILTER ----------
+    let filtered = resultsData.filter(song =>
+      song.trackName.toLowerCase().includes(searchTerm) ||
+      song.artistName.toLowerCase().includes(searchTerm)
+    );
+
+    // ---------- SORT ----------
+    filtered.sort((a, b) => {
+      const aCard = db[a.trackId] || "";
+      const bCard = db[b.trackId] || "";
+      switch (sortBy) {
+        case "title": return a.trackName.localeCompare(b.trackName);
+        case "artist": return a.artistName.localeCompare(b.artistName);
+        case "year": return new Date(a.releaseDate) - new Date(b.releaseDate);
+        case "cardId": return aCard.localeCompare(bCard);
+        default: return 0;
+      }
+    });
+
+    // ---------- RENDER ----------
+    resultsDiv.innerHTML = "";
+
+    if (!filtered.length) {
+      resultsDiv.innerHTML = "No matching songs found.";
+      return;
+    }
+
+    filtered.forEach(song => {
+      const year = new Date(song.releaseDate).getFullYear();
+      const audio = new Audio(song.previewUrl);
+
+      const row = document.createElement("div");
+      row.className = "song";
+
+      const artwork = document.createElement("div");
+      artwork.className = "artwork";
+
+      const img = document.createElement("img");
+      img.src = song.artworkUrl100.replace("100x100bb", "300x300bb");
+
+      const overlay = document.createElement("div");
+      overlay.className = "play-overlay";
+      overlay.textContent = "▶";
+
+      artwork.append(img, overlay);
+
+      artwork.onclick = () => {
+        if (currentlyPlaying && currentlyPlaying !== audio) {
+          currentlyPlaying.pause();
+          document.querySelectorAll(".artwork.playing").forEach(a => {
+            a.classList.remove("playing");
+            a.querySelector(".play-overlay").textContent = "▶";
+          });
+        }
+
+        if (audio.paused) {
+          audio.play();
+          overlay.textContent = "❚❚";
+          artwork.classList.add("playing");
+          currentlyPlaying = audio;
+        } else {
+          audio.pause();
+          overlay.textContent = "▶";
+          artwork.classList.remove("playing");
+        }
+
+        audio.onended = () => {
+          overlay.textContent = "▶";
+          artwork.classList.remove("playing");
+          currentlyPlaying = null;
+        };
+      };
+
+      const info = document.createElement("div");
+      info.className = "song-info";
+      info.innerHTML = `
+        <div class="song-title">${song.trackName}</div>
+        <div class="song-artist">${song.artistName}</div>
+        <div class="song-album">${song.collectionName}</div>
+        <div class="song-year">${year}</div>
+      `;
+
+      const btn = document.createElement("button");
+      btn.className = "action-btn remove";
+      btn.textContent = "–";
+
+      const assignedDiv = document.createElement("div");
+      assignedDiv.className = "assigned-id";
+      assignedDiv.textContent = db[song.trackId];
+      row.appendChild(assignedDiv);
+
+      btn.onclick = () => {
+        delete db[song.trackId];
+        saveDB(db);
+        renderSongList();
+      };
+
+      row.append(artwork, info, btn);
+      resultsDiv.appendChild(row);
+    });
+
+  } catch (err) {
+    console.error(err);
+    resultsDiv.innerHTML = "Failed to load songs.";
+  }
+}
+
+function resetDatabase() {
+  if (confirm("Are you sure you want to reset the DB?")) {
+    localStorage.removeItem(STORAGE_KEY);
+    renderSongList();
+  }
+}
+
+
+// ---------- Export Database ----------
+document.getElementById("exportDBBtn").onclick = () => {
+  const db = getDB();
+  const dataStr = JSON.stringify(db, null, 2); // pretty-print JSON
+  const blob = new Blob([dataStr], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "songDB.txt";
+  a.click();
+
+  URL.revokeObjectURL(url);
+};
+
+// ---------- Import Database ----------
+document.getElementById("importDBBtn").onclick = () => {
+  document.getElementById("importDBFile").click();
+};
+
+document.getElementById("importDBFile").addEventListener("change", async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const text = await file.text();
+  let importedDB;
+  try {
+    importedDB = JSON.parse(text);
+  } catch {
+    alert("Invalid database file!");
+    return;
+  }
+
+  const currentDB = getDB();
+  const mergedDB = { ...currentDB };
+  let conflictIds = [];
+
+  // Detect conflicts
+  for (const [trackId, cardId] of Object.entries(importedDB)) {
+    if (mergedDB[trackId] && mergedDB[trackId] !== cardId) {
+      conflictIds.push(trackId);
+    } else {
+      mergedDB[trackId] = cardId;
+    }
+  }
+
+  // Resolve conflicts
+  if (conflictIds.length > 0) {
+    const overwrite = confirm(
+      `Conflicting assignments detected for these track IDs:\n${conflictIds.join(
+        ", "
+      )}\n\nOverwrite existing assignments?`
+    );
+    conflictIds.forEach(id => {
+      if (overwrite) {
+        mergedDB[id] = importedDB[id];
+      }
+    });
+  }
+
+  saveDB(mergedDB);
+  renderSongList();
+  alert("Database imported successfully!");
+  e.target.value = ""; // reset file input
+});
+
+// let playGameStream = null;
+
+// async function startPlayGameScanner() {
+//   const video = document.getElementById("playGameVideo");
+//   try {
+//     playGameStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+//     video.srcObject = playGameStream;
+//     video.play();
+//   } catch (err) {
+//     console.error("Camera access failed:", err);
+//   }
+// }
+
+// // Stop the scanning
+// function stopPlayGameScanner() {
+//   // Stop the camera stream
+//   if (playGameStream) {
+//     playGameStream.getTracks().forEach(track => track.stop());
+//     playGameStream = null;
+//   }
+
+//   // Stop the scanning loop
+//   if (scanAnimationFrame) {
+//     cancelAnimationFrame(scanAnimationFrame);
+//     scanAnimationFrame = null;
+//   }
+
+//   // Clear the video element
+//   const video = document.getElementById("playGameVideo");
+//   if (video) video.srcObject = null;
+// }
+
+function stopScanPlayGameCard() {
+  // Stop camera stream
+  if (playStream) {
+    playStream.getTracks().forEach(track => track.stop());
+    playStream = null;
+  }
+
+  // Stop barcode scanning loops
+  if (playDetector && typeof playDetector.cancel === "function") {
+    // Some detectors may have a cancel method
+    playDetector.cancel();
+  }
+
+  // Clear any custom scanning loops (for jsQR)
+  if (scanWithBarcodeDetectorPlayLoop) {
+    cancelAnimationFrame(scanWithBarcodeDetectorPlayLoop);
+    scanWithBarcodeDetectorPlayLoop = null;
+  }
+
+  if (scanWithJsQRPlayLoop) {
+    cancelAnimationFrame(scanWithJsQRPlayLoop);
+    scanWithJsQRPlayLoop = null;
+  }
+
+  // Hide scanner UI
+  const scannerDiv = document.getElementById("playGameScanner");
+  if (scannerDiv) {
+    scannerDiv.innerHTML = "";
+    scannerDiv.style.display = "none";
+  }
+}
+
+// Add event listeners to automatically update the song list
+const songListSearchInput = document.getElementById("songListSearch");
+const songListSortSelect = document.getElementById("songListSort");
+
+songListSearchInput.addEventListener("input", renderSongList);
+songListSortSelect.addEventListener("change", renderSongList);
+
+
+</script>
+
+</body>
+</html>
